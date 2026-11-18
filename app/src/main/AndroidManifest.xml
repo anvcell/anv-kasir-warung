@@ -7,13 +7,6 @@
         android:allowBackup="true"
         android:supportsRtl="true">
         <activity
-            android:name="com.journeyapps.barcodescanner.CaptureActivity"
-            android:screenOrientation="fullSensor"
-            android:stateNotNeeded="true"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-            android:windowSoftInputMode="stateAlwaysHidden"
-            android:exported="false"/>
-        <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait"
             android:exported="true">
