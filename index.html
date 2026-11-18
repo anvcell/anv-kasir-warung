@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<title>AnV Kasir Warung</title>
+<style>
+:root{--bg:#0d1422;--panel:#172235;--panel2:#202f46;--gold:#e8b84b;--txt:#f5f7fb;--muted:#aab6c8;--green:#25c58a;--red:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:15px system-ui,Arial}header{padding:16px;background:#101a2b;border-bottom:1px solid #2c3a50;position:sticky;top:0;z-index:5}header b{font-size:20px;color:var(--gold)}header small{display:block;color:var(--muted)}main{max-width:850px;margin:auto;padding:14px;padding-bottom:90px}.tabs{display:flex;gap:8px;overflow:auto;padding:10px 0}.tabs button{white-space:nowrap}.card{background:var(--panel);border:1px solid #2a3b54;border-radius:15px;padding:14px;margin:10px 0}h2{font-size:17px;margin:0 0 12px;color:var(--gold)}button{border:0;border-radius:10px;padding:11px 14px;background:var(--gold);color:#18202c;font-weight:700;font-size:14px;cursor:pointer}button.secondary{background:var(--panel2);color:var(--txt);border:1px solid #40516b}button.danger{background:#6b2833;color:white}button.green{background:var(--green);color:#09251c}button:disabled{opacity:.45}input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #40516b;background:#0f1929;color:white;margin:5px 0 10px;font-size:16px}label{font-size:13px;color:var(--muted)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.muted{color:var(--muted);font-size:13px}.price{font-size:21px;font-weight:800}.item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #2a3b54}.item:last-child{border:0}.item strong{display:block}.item small{color:var(--muted)}.right{text-align:right}.hidden{display:none!important}#video{width:100%;border-radius:12px;background:#000;max-height:330px;object-fit:cover}#scanStatus{padding:9px;color:var(--muted)}.total{font-size:25px;font-weight:900;color:var(--gold)}.pill{display:inline-block;background:#2a3b54;padding:4px 8px;border-radius:20px;font-size:12px}.empty{text-align:center;padding:20px;color:var(--muted)}.actions{display:flex;gap:6px;flex-wrap:wrap}.actions button{padding:8px 10px}.foot{position:fixed;bottom:0;left:0;right:0;background:#101a2b;border-top:1px solid #2c3a50;padding:10px;text-align:center;color:var(--muted);font-size:12px}
+@media(max-width:520px){.grid{grid-template-columns:1fr 1fr}main{padding:10px}.card{padding:12px}}
+@media print{body{background:white;color:black}.no-print,header,.tabs,.foot{display:none!important}main{padding:0}.card{border:0;color:black;background:white}.receipt{display:block!important}}
+</style>
+</head>
+<body>
+<header><b>ANV KASIR WARUNG</b><small>Kasir sembako • jajanan • minuman | Mode lokal</small></header>
+<main>
+<div class="tabs no-print">
+<button onclick="tab('kasir')">Kasir</button><button class="secondary" onclick="tab('barang')">Data Barang</button><button class="secondary" onclick="tab('laporan')">Laporan</button>
+</div>
+<section id="kasir">
+<div class="card no-print">
+<h2>🔎 Cari / Scan Barang</h2>
+<div class="row"><input id="search" placeholder="Nama atau kode barcode..." oninput="renderProducts()"><button onclick="startScan()">📷 Scan</button></div>
+<div id="scanner" class="hidden">
+<video id="video" playsinline autoplay muted></video>
+<div id="scanStatus">Arahkan barcode ke kamera.</div>
+<div class="actions"><button class="secondary" onclick="switchCamera()">Ganti kamera</button><button class="danger" onclick="stopScan()">Tutup kamera</button></div>
+</div>
+<div id="productResults"></div>
+</div>
+<div class="card">
+<h2>🛒 Keranjang</h2><div id="cartList" class="empty">Belum ada barang dipilih.</div>
+<div class="grid no-print"><div><label>Jenis harga</label><select id="priceType" onchange="renderCart()"><option value="ecer">Eceran</option><option value="grosir">Grosir</option></select></div><div><label>Bayar</label><select id="payType"><option>Tunai</option><option>Transfer</option><option>QRIS</option><option>Hutang</option></select></div></div>
+<div class="row"><div><div class="muted">Total belanja</div><div class="total" id="total">Rp0</div></div><div class="no-print"><label>Uang diterima</label><input id="paid" type="number" min="0" placeholder="0" oninput="renderCart()"></div></div>
+<div class="row"><div><span class="muted">Kembalian</span><div class="price" id="change">Rp0</div></div><button class="green no-print" onclick="checkout()">SIMPAN TRANSAKSI</button></div>
+</div>
+</section>
+<section id="barang" class="hidden">
+<div class="card no-print"><h2>➕ Tambah / Edit Barang</h2>
+<input id="editId" type="hidden">
+<label>Nama barang</label><input id="pName" placeholder="Contoh: Kopi sachet">
+<label>Kode barcode (boleh kosong)</label><div class="row"><input id="pBarcode" placeholder="Scan atau ketik barcode"><button class="secondary" onclick="scanForField()">📷</button></div>
+<div class="grid"><div><label>Harga modal</label><input id="pCost" type="number" placeholder="0"></div><div><label>Stok</label><input id="pStock" type="number" placeholder="0"></div><div><label>Harga ecer</label><input id="pRetail" type="number" placeholder="0"></div><div><label>Harga grosir</label><input id="pWholesale" type="number" placeholder="0"></div></div>
+<button onclick="saveProduct()">Simpan Barang</button> <button class="secondary" onclick="clearProductForm()">Bersihkan</button>
+</div>
+<div class="card"><h2>Daftar Barang</h2><div id="allProducts"></div></div>
+</section>
+<section id="laporan" class="hidden">
+<div class="card"><h2>📊 Ringkasan Penjualan</h2><div class="grid"><div><div class="muted">Transaksi</div><div class="price" id="salesCount">0</div></div><div><div class="muted">Omzet</div><div class="price" id="salesTotal">Rp0</div></div><div><div class="muted">Perkiraan laba</div><div class="price" id="profitTotal">Rp0</div></div></div></div>
+<div class="card"><h2>Riwayat Transaksi</h2><div id="history"></div></div>
+<div class="card no-print"><button class="secondary" onclick="exportData()">Backup data</button> <button class="secondary" onclick="document.getElementById('restoreFile').click()">Pulihkan backup</button><input id="restoreFile" type="file" accept="application/json" class="hidden" onchange="restoreData(event)"><button class="danger" onclick="resetAll()">Reset semua data</button></div>
+</section>
+<div id="receipt" class="receipt hidden"></div>
+</main><div class="foot">AnV Kasir Warung • Data tersimpan di perangkat ini</div>
+<script>
+const $=id=>document.getElementById(id), money=n=>'Rp'+(Number(n)||0).toLocaleString('id-ID');
+let products=JSON.parse(localStorage.getItem('anv_products')||'[]'),cart=[],sales=JSON.parse(localStorage.getItem('anv_sales')||'[]');
+let stream=null,detector=null,scanTarget='cart',facing='environment',scanLoop=false,zxingReader=null,zxingControls=null;
+function persist(){localStorage.setItem('anv_products',JSON.stringify(products));localStorage.setItem('anv_sales',JSON.stringify(sales))}
+function tab(t){['kasir','barang','laporan'].forEach(x=>$(x).classList.toggle('hidden',x!==t));if(t==='barang')renderAll();if(t==='laporan')renderReport();if(t==='kasir')renderProducts()}
+function renderProducts(){let q=$('search').value.toLowerCase();let list=products.filter(p=>p.name.toLowerCase().includes(q)||p.barcode.includes(q)).slice(0,30);$('productResults').innerHTML=list.map(p=>`<div class="item"><div><strong>${esc(p.name)}</strong><small>${p.barcode?esc(p.barcode):'Tanpa barcode'} • Stok ${p.stock}</small><div>${money(p.retail)}</div></div><button onclick="addCart('${p.id}')">Tambah</button></div>`).join('')||'<div class="empty">Barang tidak ditemukan. Tambahkan melalui Data Barang.</div>'}
+function addCart(id){let p=products.find(x=>x.id===id);if(!p)return;let c=cart.find(x=>x.id===id);if(c)c.qty++;else cart.push({...p,qty:1});renderCart()}
+function renderCart(){let type=$('priceType').value;let total=0;$('cartList').innerHTML=cart.map((c,i)=>{let price=Number(type==='grosir'&&c.wholesale?c.wholesale:c.retail);total+=price*c.qty;return `<div class="item"><div><strong>${esc(c.name)}</strong><small>${money(price)} × ${c.qty}</small><div class="actions no-print"><button class="secondary" onclick="qty(${i},-1)">−</button><button class="secondary" onclick="qty(${i},1)">+</button><button class="secondary" onclick="editPrice(${i})">Ubah harga</button><button class="danger" onclick="removeCart(${i})">Hapus</button></div></div><b>${money(price*c.qty)}</b></div>`}).join('')||'<div class="empty">Belum ada barang dipilih.</div>';$('total').textContent=money(total);$('change').textContent=money(Math.max(0,Number($('paid').value||0)-total))}
+function qty(i,d){cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);renderCart()}function removeCart(i){cart.splice(i,1);renderCart()}
+function editPrice(i){let v=prompt('Masukkan harga jual untuk barang ini:',cart[i].retail);if(v!==null&&!isNaN(v)&&Number(v)>=0){cart[i].retail=Number(v);cart[i].wholesale=Number(v);renderCart()}}
+function saveProduct(){let name=$('pName').value.trim();if(!name)return alert('Nama barang wajib diisi.');let id=$('editId').value||('p'+Date.now());let p={id,name,barcode:$('pBarcode').value.trim(),cost:+$('pCost').value||0,stock:+$('pStock').value||0,retail:+$('pRetail').value||0,wholesale:+$('pWholesale').value||0};let ix=products.findIndex(x=>x.id===id);if(ix>=0)products[ix]=p;else products.push(p);persist();clearProductForm();renderAll();alert('Barang tersimpan.')}
+function clearProductForm(){['editId','pName','pBarcode','pCost','pStock','pRetail','pWholesale'].forEach(x=>$(x).value='')}
+function editProduct(id){let p=products.find(x=>x.id===id);$('editId').value=p.id;$('pName').value=p.name;$('pBarcode').value=p.barcode;$('pCost').value=p.cost;$('pStock').value=p.stock;$('pRetail').value=p.retail;$('pWholesale').value=p.wholesale;window.scrollTo(0,0)}
+function deleteProduct(id){if(confirm('Hapus barang ini?')){products=products.filter(x=>x.id!==id);persist();renderAll()}}
+function renderAll(){$('allProducts').innerHTML=products.map(p=>`<div class="item"><div><strong>${esc(p.name)}</strong><small>${esc(p.barcode||'Tanpa barcode')} • Stok ${p.stock}</small><div>${money(p.retail)} / grosir ${money(p.wholesale)}</div></div><div class="actions"><button class="secondary" onclick="editProduct('${p.id}')">Edit</button><button class="danger" onclick="deleteProduct('${p.id}')">×</button></div></div>`).join('')||'<div class="empty">Belum ada barang.</div>'}
+function checkout(){if(!cart.length)return alert('Keranjang masih kosong.');let type=$('priceType').value,total=cart.reduce((s,c)=>s+(type==='grosir'&&c.wholesale?c.wholesale:c.retail)*c.qty,0),paid=+$('paid').value||0,pay=$('payType').value;if(pay!=='Hutang'&&paid<total)return alert('Uang diterima belum cukup.');let items=cart.map(c=>{let price=Number(type==='grosir'&&c.wholesale?c.wholesale:c.retail);let p=products.find(x=>x.id===c.id);if(p)p.stock=Math.max(0,p.stock-c.qty);return {name:c.name,qty:c.qty,price,cost:c.cost}});let profit=items.reduce((s,x)=>s+(x.price-x.cost)*x.qty,0);let sale={id:Date.now(),date:new Date().toLocaleString('id-ID'),items,total,paid:pay==='Hutang'?0:paid,change:pay==='Hutang'?0:paid-total,pay,profit};sales.unshift(sale);persist();cart=[];$('paid').value='';renderCart();renderProducts();renderReport();receipt(sale);alert('Transaksi berhasil disimpan.');}
+function receipt(s){$('receipt').innerHTML=`<div style="width:58mm;font:12px monospace;color:black"><center><b>ANV KASIR WARUNG</b><br>Terima kasih telah berbelanja</center><hr>${s.date}<br>${s.items.map(x=>`${esc(x.name)}<br>${x.qty} x ${money(x.price)} = ${money(x.qty*x.price)}`).join('<br>')}<hr>Total: ${money(s.total)}<br>Bayar: ${s.pay==='Hutang'?'HUTANG':money(s.paid)}<br>Kembali: ${money(s.change)}<hr><center>-- Terima kasih --</center></div>`;$('receipt').classList.remove('hidden');window.print();$('receipt').classList.add('hidden')}
+function renderReport(){let total=sales.reduce((a,s)=>a+s.total,0),profit=sales.reduce((a,s)=>a+s.profit,0);$('salesCount').textContent=sales.length;$('salesTotal').textContent=money(total);$('profitTotal').textContent=money(profit);$('history').innerHTML=sales.slice(0,100).map(s=>`<div class="item"><div><strong>${money(s.total)} • ${s.pay}</strong><small>${s.date} • ${s.items.length} jenis barang</small></div><button class="secondary" onclick="showSale(${s.id})">Detail</button></div>`).join('')||'<div class="empty">Belum ada transaksi.</div>'}
+function showSale(id){let s=sales.find(x=>x.id===id);alert(s.items.map(x=>`${x.name} x${x.qty} = ${money(x.qty*x.price)}`).join('\\n')+'\\nTOTAL '+money(s.total))}
+function exportData(){let blob=new Blob([JSON.stringify({products,sales},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup-anv-kasir.json';a.click();URL.revokeObjectURL(a.href)}
+function restoreData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);if(!Array.isArray(d.products)||!Array.isArray(d.sales))throw 0;products=d.products;sales=d.sales;persist();renderAll();renderReport();alert('Backup berhasil dipulihkan')}catch(_){alert('File backup tidak valid')}};r.readAsText(f)}
+function resetAll(){if(confirm('Yakin hapus SEMUA barang dan riwayat transaksi? Data tidak bisa dikembalikan.')){products=[];sales=[];cart=[];persist();renderAll();renderCart();renderReport()}}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function startScan(){scanTarget='cart';await openCamera()}
+async function scanForField(){scanTarget='field';await openCamera()}
+async function loadZXing(){
+  if(window.ZXing)return true;
+  return new Promise(resolve=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+    s.onload=()=>resolve(!!window.ZXing);
+    s.onerror=()=>resolve(false);
+    document.head.appendChild(s);
+  });
+}
+async function openCamera(){
+  if(!window.isSecureContext){alert('Kamera membutuhkan HTTPS. Buka web melalui link GitHub Pages HTTPS.');return}
+  if(!navigator.mediaDevices?.getUserMedia){alert('Browser tidak menyediakan akses kamera. Coba Chrome terbaru.');return}
+  stopScan();
+  $('scanner').classList.remove('hidden');
+  $('scanStatus').textContent='Meminta izin kamera...';
+  try{
+    if('BarcodeDetector' in window){
+      detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code']});
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing}},audio:false});
+      $('video').srcObject=stream;
+      await $('video').play();
+      $('scanStatus').textContent='Kamera aktif. Arahkan barcode ke kamera.';
+      scanLoop=true;
+      requestAnimationFrame(scanFrame);
+      return;
+    }
+    $('scanStatus').textContent='Menyiapkan pemindai alternatif...';
+    const loaded=await loadZXing();
+    if(!loaded){stopScan();alert('Pemindai alternatif gagal dimuat. Periksa koneksi internet lalu coba lagi.');return}
+    zxingReader=new ZXing.BrowserMultiFormatReader();
+    zxingControls=await zxingReader.decodeFromConstraints(
+      {audio:false,video:{facingMode:{ideal:facing}}},
+      $('video'),
+      (result)=>{if(result)handleScannedCode(result.getText())}
+    );
+    $('scanStatus').textContent='Kamera aktif. Arahkan barcode ke kamera.';
+  }catch(e){
+    stopScan();
+    alert('Kamera tidak bisa dibuka: '+(e.message||e)+'. Izinkan akses kamera pada Chrome.');
+  }
+}
+function handleScannedCode(code){
+  if(!code)return;
+  if(scanTarget==='field'){
+    $('pBarcode').value=code;
+    stopScan();
+    tab('barang');
+    alert('Barcode berhasil dibaca: '+code);
+    return;
+  }
+  const p=products.find(x=>String(x.barcode)===String(code));
+  if(p){addCart(p.id);$('scanStatus').textContent='Ditemukan: '+p.name;stopScan()}
+  else{$('search').value=code;renderProducts();$('scanStatus').textContent='Barcode '+code+' belum terdaftar. Tambahkan di Data Barang.'}
+}
+async function scanFrame(){
+  if(!scanLoop||!stream)return;
+  try{
+    if($('video').readyState>=2){
+      const codes=await detector.detect($('video'));
+      if(codes.length)handleScannedCode(codes[0].rawValue);
+    }
+  }catch(e){}
+  if(scanLoop)requestAnimationFrame(scanFrame);
+}
+function stopScan(){
+  scanLoop=false;
+  if(zxingControls){try{zxingControls.stop()}catch(e){}zxingControls=null}
+  if(zxingReader){try{zxingReader.reset()}catch(e){}zxingReader=null}
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+  if($('video'))$('video').srcObject=null;
+  if($('scanner'))$('scanner').classList.add('hidden');
+}
+async function switchCamera(){facing=facing==='environment'?'user':'environment';await openCamera()}
+renderProducts();renderCart();
+</script></body></html>
