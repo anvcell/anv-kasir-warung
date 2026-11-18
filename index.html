@@ -77,7 +77,7 @@ function restoreData(e){let f=e.target.files[0];if(!f)return;let r=new FileReade
 function resetAll(){if(confirm('Yakin hapus SEMUA barang dan riwayat transaksi? Data tidak bisa dikembalikan.')){products=[];sales=[];cart=[];persist();renderAll();renderCart();renderReport()}}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function startScan(){scanTarget='cart';await openCamera()}
-async function scanForField(){scanTarget='field';await openCamera()}
+async function scanForField(){scanTarget='field';tab('kasir');await openCamera()}
 async function loadZXing(){
   if(window.ZXing)return true;
   return new Promise(resolve=>{
