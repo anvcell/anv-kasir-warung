@@ -21,7 +21,7 @@
 <section id="kasir">
 <div class="card no-print">
 <h2>🔎 Cari / Scan Barang</h2>
-<div class="row"><input id="search" placeholder="Nama atau kode barcode..." oninput="renderProducts()"><button onclick="startScan()">📷 Scan</button></div>
+<div class="row"><input id="search" placeholder="Nama atau kode barcode..." oninput="renderProducts()"><button onclick="startScan()">📷 Barcode</button><button class="green" onclick="$('aiPhotoInput').click()">✨ Foto AI</button></div><input id="aiPhotoInput" type="file" accept="image/*" capture="environment" class="hidden">
 <div id="scanner" class="hidden">
 <video id="video" playsinline autoplay muted></video>
 <div id="scanStatus">Arahkan barcode ke kamera.</div>
@@ -156,6 +156,36 @@ function stopScan(){
 }
 async function switchCamera(){facing=facing==='environment'?'user':'environment';await openCamera()}
 renderProducts();renderCart();
+
+$('aiPhotoInput').addEventListener('change', async function(){
+ const file=this.files&&this.files[0]; this.value=''; if(!file)return;
+ try{await recognizeProductPhoto(file)}catch(e){alert('Pengenalan foto gagal: '+(e.message||e))}
+});
+async function recognizeProductPhoto(file){
+ const catalog=products.filter(p=>p.photo).slice(0,12);
+ if(!catalog.length){alert('Belum ada foto produk. Tambahkan foto di menu Data Barang terlebih dahulu.');return}
+ $('productResults').innerHTML='<div class="empty">Sedang mengenali produk dengan AI...</div>';
+ const target=await new Promise((resolve,reject)=>{
+  const reader=new FileReader(); reader.onerror=reject;
+  reader.onload=()=>{const img=new Image();img.onerror=reject;img.onload=()=>{
+   const max=800,scale=Math.min(1,max/Math.max(img.width,img.height)),canvas=document.createElement('canvas');
+   canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);
+   canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+   resolve(canvas.toDataURL('image/jpeg',0.78));
+  };img.src=reader.result};reader.readAsDataURL(file);
+ });
+ const payload={image:{mimeType:'image/jpeg',data:target.split(',')[1]},candidates:catalog.map(p=>({id:p.id,name:p.name,photo:p.photo}))};
+ const response=await fetch('/.netlify/functions/recognize-product',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+ const result=await response.json();
+ if(!response.ok)throw new Error(result.error||'Server AI belum siap. Pastikan web sudah di-deploy di Netlify.');
+ if(!Number.isInteger(result.index)||result.index<0||result.index>=catalog.length||Number(result.confidence)<0.72){
+  $('productResults').innerHTML='<div class="empty">Produk belum dikenali dengan yakin. Coba foto lebih jelas atau gunakan barcode/pencarian manual.</div>';return;
+ }
+ const p=catalog[result.index];addCart(p.id);
+ $('productResults').innerHTML='<div class="item"><div><strong>Terbaca: '+esc(p.name)+'</strong><small>Kecocokan AI '+Math.round(result.confidence*100)+'%</small></div><b>'+money(p.retail)+'</b></div>';
+ alert(p.name+' ditambahkan ke keranjang dengan harga '+money(p.retail));
+}
+
 // Simpan foto produk secara lokal dalam ukuran terkompresi
 $('pPhoto').addEventListener('change',function(){const file=this.files&&this.files[0];if(!file)return;if(!file.type.startsWith('image/')){alert('Pilih file foto/gambar.');return}const reader=new FileReader();reader.onload=function(){const img=new Image();img.onload=function(){const max=640,scale=Math.min(1,max/Math.max(img.width,img.height)),canvas=document.createElement('canvas');canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);productPhoto=canvas.toDataURL('image/jpeg',0.72);$('pPhotoPreview').src=productPhoto;$('pPhotoPreview').style.display='block'};img.onerror=function(){alert('Foto tidak bisa dibaca. Coba foto lain.');};img.src=reader.result};reader.readAsDataURL(file)});
 // Tombol scan khusus pada form Data Barang
