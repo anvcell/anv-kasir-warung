@@ -100,7 +100,6 @@ public class MainActivity extends Activity {
             in.setPrompt("Arahkan kamera ke barcode barang");
             in.setBeepEnabled(true);
             in.setOrientationLocked(false);
-            in.setCaptureActivity(com.journeyapps.barcodescanner.CaptureActivity.class);
             in.initiateScan();
         } catch (Exception e) {
             toast("Pemindai gagal dibuka: " + e.getClass().getSimpleName());
