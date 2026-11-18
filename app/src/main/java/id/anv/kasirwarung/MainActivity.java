@@ -3,6 +3,8 @@ package id.anv.kasirwarung;
 import android.app.*;
 import android.os.Bundle;
 import android.content.*;
+import android.content.pm.PackageManager;
+import android.Manifest;
 import android.database.*;
 import android.database.sqlite.*;
 import android.graphics.Color;
@@ -15,6 +17,7 @@ import java.text.NumberFormat;
 import java.util.*;
 
 public class MainActivity extends Activity {
+    static final int CAMERA_PERMISSION = 501;
     final int BG = Color.rgb(16,20,29), PANEL = Color.rgb(29,36,49), GOLD = Color.rgb(230,184,75), WHITE = Color.WHITE;
     DB db; LinearLayout root, list; EditText search; TextView totalView; ArrayList<Item> cart = new ArrayList<>();
     int total = 0; String pendingBarcode = "";
@@ -83,7 +86,33 @@ public class MainActivity extends Activity {
         }).setNegativeButton("Batal",null).show();
     }
     int num(EditText e){try{return Integer.parseInt(e.getText().toString());}catch(Exception ex){return 0;}}
-    void scan(){ try { IntentIntegrator in=new IntentIntegrator(this); in.setDesiredBarcodeFormats(IntentIntegrator.ALL_CODE_TYPES); in.setPrompt("Arahkan kamera ke barcode barang"); in.setBeepEnabled(true); in.setOrientationLocked(false); in.initiateScan(); }catch(Exception e){toast("Tidak dapat membuka kamera");} }
+    void scan(){
+        if(android.os.Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
+            requestPermissions(new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION);
+            return;
+        }
+        startBarcodeScanner();
+    }
+    void startBarcodeScanner(){
+        try {
+            IntentIntegrator in = new IntentIntegrator(this);
+            in.setDesiredBarcodeFormats(IntentIntegrator.ALL_CODE_TYPES);
+            in.setPrompt("Arahkan kamera ke barcode barang");
+            in.setBeepEnabled(true);
+            in.setOrientationLocked(false);
+            in.setCaptureActivity(com.journeyapps.barcodescanner.CaptureActivity.class);
+            in.initiateScan();
+        } catch (Exception e) {
+            toast("Pemindai gagal dibuka: " + e.getClass().getSimpleName());
+        }
+    }
+    @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
+        super.onRequestPermissionsResult(requestCode,permissions,grantResults);
+        if(requestCode==CAMERA_PERMISSION){
+            if(grantResults.length>0 && grantResults[0]==PackageManager.PERMISSION_GRANTED) startBarcodeScanner();
+            else toast("Izin kamera diperlukan untuk scan barcode");
+        }
+    }
     @Override protected void onActivityResult(int req,int res,Intent data){super.onActivityResult(req,res,data); IntentResult r=IntentIntegrator.parseActivityResult(req,res,data); if(r!=null && r.getContents()!=null){String code=r.getContents(); Cursor c=db.getReadableDatabase().rawQuery("SELECT id,name,barcode,price,stock FROM products WHERE barcode=?",new String[]{code}); if(c.moveToFirst()){addCart(new Item(c.getInt(0),c.getString(1),c.getString(2),c.getInt(3),c.getInt(4)));}else productDialog(null,code);c.close();}}
     void checkout(){
         if(cart.isEmpty()){toast("Keranjang masih kosong");return;}
