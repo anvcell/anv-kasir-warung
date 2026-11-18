@@ -153,4 +153,7 @@ function stopScan(){
 }
 async function switchCamera(){facing=facing==='environment'?'user':'environment';await openCamera()}
 renderProducts();renderCart();
+// Tombol scan khusus pada form Data Barang
+const scanFieldButton=$('scanFieldBtn');
+if(scanFieldButton){scanFieldButton.addEventListener('click',function(){scanForField().catch(function(e){alert('Scan Data Barang gagal: '+(e&&e.message?e.message:e));});});}
 </script></body></html>
