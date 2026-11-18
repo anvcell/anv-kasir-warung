@@ -55,12 +55,12 @@ public class MainActivity extends Activity {
         if(it.stock<1){toast("Stok kosong");return;}
         final EditText qty=new EditText(this); qty.setInputType(2); qty.setText("1");
         new AlertDialog.Builder(this).setTitle("Jumlah: "+it.name).setView(qty).setPositiveButton("Tambah",(d,w)->{
-            int n=1; try{n=Integer.parseInt(qty.getText().toString());}catch(Exception e){} if(n<1)n=1;
-            int price=it.price; EditText p=new EditText(this); p.setInputType(2); p.setText(String.valueOf(price));
+            int parsed=1; try{parsed=Integer.parseInt(qty.getText().toString());}catch(Exception e){} final int quantity=Math.max(1,parsed);
+            final EditText p=new EditText(this); p.setInputType(2); p.setText(String.valueOf(it.price));
             new AlertDialog.Builder(this).setTitle("Harga jual per item").setMessage("Boleh ubah harga saat transaksi").setView(p).setPositiveButton("OK",(dd,ww)->{
-                try{price=Integer.parseInt(p.getText().toString());}catch(Exception e){}
-                for(int i=0;i<n;i++) cart.add(new Item(it.id,it.name,it.barcode,price,it.stock));
-                total+=price*n; totalView.setText("Keranjang: "+rupiah(total)+" ("+cart.size()+" item)"); toast("Ditambahkan");
+                int parsedPrice=it.price; try{parsedPrice=Integer.parseInt(p.getText().toString());}catch(Exception e){} final int unitPrice=parsedPrice;
+                for(int i=0;i<quantity;i++) cart.add(new Item(it.id,it.name,it.barcode,unitPrice,it.stock));
+                total+=unitPrice*quantity; totalView.setText("Keranjang: "+rupiah(total)+" ("+cart.size()+" item)"); toast("Ditambahkan");
             }).setNegativeButton("Batal",null).show();
         }).setNegativeButton("Batal",null).show();
     }
