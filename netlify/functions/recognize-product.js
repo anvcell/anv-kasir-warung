@@ -24,7 +24,7 @@ export default async (req) => {
     for (let i = 0; i < candidates.length; i++) {
       const item = candidates[i];
       if (!item.photo || !item.photo.startsWith("data:image/")) continue;
-      const match = item.photo.match(/^data:(image\\/(?:jpeg|png|webp));base64,(.+)$/);
+      const match = item.photo.match(new RegExp("^data:(image/(?:jpeg|png|webp));base64,(.+)$"));
       if (!match) continue;
       parts.push({ text: "KATALOG INDEX " + i + ", NAMA " + String(item.name || "").slice(0, 100) });
       parts.push({ inlineData: { mimeType: match[1], data: match[2] } });
@@ -45,7 +45,7 @@ export default async (req) => {
       return new Response(JSON.stringify({ error: result.error?.message || "Gemini API gagal." }), { status: 502, headers });
     }
     const text = result.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
-    const parsed = JSON.parse(text.match(/\\{[\\s\\S]*\\}/)?.[0] || text);
+    const parsed = JSON.parse(text);
     const index = Number(parsed.index);
     const confidence = Number(parsed.confidence);
     if (!Number.isInteger(index) || index < 0 || index >= candidates.length || !Number.isFinite(confidence)) {
