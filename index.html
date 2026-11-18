@@ -39,7 +39,7 @@
 <div class="card no-print"><h2>➕ Tambah / Edit Barang</h2>
 <input id="editId" type="hidden">
 <label>Nama barang</label><input id="pName" placeholder="Contoh: Kopi sachet">
-<label>Kode barcode (boleh kosong)</label><div class="row"><input id="pBarcode" placeholder="Scan atau ketik barcode"><button class="secondary" onclick="scanForField()">📷</button></div>
+<label>Kode barcode (boleh kosong)</label><div class="row"><input id="pBarcode" placeholder="Scan atau ketik barcode"><button id="scanFieldBtn" class="secondary" type="button">📷</button></div>
 <div class="grid"><div><label>Harga modal</label><input id="pCost" type="number" placeholder="0"></div><div><label>Stok</label><input id="pStock" type="number" placeholder="0"></div><div><label>Harga ecer</label><input id="pRetail" type="number" placeholder="0"></div><div><label>Harga grosir</label><input id="pWholesale" type="number" placeholder="0"></div></div>
 <button onclick="saveProduct()">Simpan Barang</button> <button class="secondary" onclick="clearProductForm()">Bersihkan</button>
 </div>
